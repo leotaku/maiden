@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DateTimeFormat = "20060102T150405Z"
+	DateTimeFormat = "20060102T150405"
 	DateFormat     = "20060102"
 )
 
