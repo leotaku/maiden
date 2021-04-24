@@ -13,4 +13,3 @@ func European(day, month, year string) (string, string, string) {
 func American(month, day, year string) (string, string, string) {
 	return year, month, day
 }
-

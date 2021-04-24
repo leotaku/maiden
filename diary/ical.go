@@ -47,7 +47,6 @@ func (e Entry) ToICALEvent(loc *time.Location) *ics.VEvent {
 
 func setLocalDateTime(ve *ics.VEvent, prop ics.ComponentProperty, d time.Time) {
 	ve.SetProperty(prop, d.UTC().Format(timeutil.DateTimeFormat))
-
 }
 
 func setLocalDate(ve *ics.VEvent, prop ics.ComponentProperty, d time.Time) {
