@@ -15,19 +15,19 @@ var (
 type Diary []Entry
 
 type Entry struct {
-	Timestamp   timeutil.Datetime
+	Datetime    timeutil.Datetime
 	Duration    time.Duration
 	Description string
 }
 
 func (e Entry) Start(loc *time.Location) time.Time {
-	return e.Timestamp.First(loc)
+	return e.Datetime.First(loc)
 }
 
 func (e Entry) End(loc *time.Location) time.Time {
-	return e.Timestamp.First(loc).Add(e.Duration)
+	return e.Datetime.First(loc).Add(e.Duration)
 }
 
 func (e Entry) RRule(loc *time.Location) string {
-	return e.Timestamp.Date.RRule(loc)
+	return e.Datetime.Date.RRule(loc)
 }

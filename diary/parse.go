@@ -91,7 +91,7 @@ func (p *Parser) Next() (*Entry, error) {
 	}
 
 	return &Entry{
-		Timestamp:   dt,
+		Datetime:    dt,
 		Duration:    dur,
 		Description: *v.Body,
 	}, nil

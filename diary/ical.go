@@ -22,7 +22,7 @@ func (e Entry) ToICALEvent(loc *time.Location) *ics.VEvent {
 	// Start and End
 	start := e.Start(loc)
 	end := e.End(loc)
-	if e.Timestamp.Time.Hour != nil && e.Timestamp.Time.Minute != nil {
+	if e.Datetime.Time.Hour != nil && e.Datetime.Time.Minute != nil {
 		setLocalDateTime(ve, ics.ComponentPropertyDtStart, start)
 		setLocalDateTime(ve, ics.ComponentPropertyDtEnd, end)
 	} else {
