@@ -1,14 +1,7 @@
 package timeutil
 
 import (
-	"fmt"
-	"strings"
 	"time"
-)
-
-const (
-	DateTimeFormat = "20060102T150405"
-	DateFormat     = "20060102"
 )
 
 type Datetime struct {
@@ -59,36 +52,4 @@ func (d Datetime) First(loc *time.Location) time.Time {
 	}
 
 	return date
-}
-
-func (d Date) RRule(loc *time.Location) string {
-	if d.Year != nil && d.Month != nil && d.Monthday != nil {
-		return ""
-	}
-
-	rules := make([]string, 0)
-	rules = append(rules, "FREQ=DAILY")
-
-	if d.Year != nil {
-		date := time.Date(*d.Year+1, 0, 0, 0, 0, 0, 0, loc)
-		s := fmt.Sprintf("UNTIL=%v", date.Format(DateTimeFormat))
-		rules = append(rules, s)
-	}
-	if d.Month != nil {
-		s := fmt.Sprintf("BYMONTH=%v", int(*d.Month))
-		rules = append(rules, s)
-	}
-	if d.Monthday != nil {
-		s := fmt.Sprintf("BYMONTHDAY=%v", *d.Monthday)
-		rules = append(rules, s)
-		rules[0] = "FREQ=MONTHLY"
-	}
-	if d.Weekday != nil {
-		wday := strings.ToUpper(d.Weekday.String()[:2])
-		s := fmt.Sprintf("BYWEEKDAY=%v", wday)
-		rules = append(rules, s)
-		rules[0] = "FREQ=WEEKLY"
-	}
-
-	return strings.Join(rules, ";")
 }

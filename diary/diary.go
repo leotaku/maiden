@@ -1,6 +1,7 @@
 package diary
 
 import (
+	"strings"
 	"time"
 
 	"github.com/leotaku/maiden/timeutil"
@@ -30,4 +31,21 @@ func (e Entry) End(loc *time.Location) time.Time {
 
 func (e Entry) RRule(loc *time.Location) string {
 	return e.Datetime.Date.RRule(loc)
+}
+
+func (e Entry) Format(o timeutil.DateOrder) string {
+	b := new(strings.Builder)
+
+	dt := e.Datetime.Format(o)
+	b.WriteString(dt)
+	b.WriteRune(' ')
+
+	if e.Duration != 0 {
+		b.WriteString(e.Duration.String())
+		b.WriteRune(' ')
+	}
+
+	b.WriteString(e.Description)
+
+	return b.String()
 }
