@@ -10,7 +10,8 @@ import (
 )
 
 const exampleDiary = `
-2021/10/10   Important meeting
+2021/04/10   Important meeting
+2021-04-11 08:00 Office work
 April 19.    My birthday
  10:30 1h    Bake cake
  12:00       Jump off a cliff
@@ -20,11 +21,12 @@ func TestParseLine(t *testing.T) {
 	r := strings.NewReader(exampleDiary)
 	parser := diary.NewParser(r, diary.ISO)
 	events, err := parser.All()
-	fmt.Println(err)
 	for _, event := range events {
 		ve := event.ToICALEvent(time.Local)
 		fmt.Println(ve.Serialize())
 	}
 
-	t.Fail()
+	if err != nil {
+		t.Error(err)
+	}
 }
