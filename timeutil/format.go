@@ -48,8 +48,8 @@ func (d Datetime) Format(o DateOrder) string {
 
 	if date == "" && time == "" {
 		return ""
-	} else if date == "" {
-		return fmt.Sprintf(" %v", time)
+	} else if time == "" {
+		return date
 	} else {
 		return fmt.Sprintf("%v %v", date, time)
 	}
