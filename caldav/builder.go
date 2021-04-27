@@ -15,7 +15,7 @@ type builder struct {
 func NewBuilder() *builder {
 	return &builder{
 		http:         http.DefaultClient,
-		providerName: "maiden@caldav.example.com",
+		providerName: "maiden@example.com",
 	}
 }
 
