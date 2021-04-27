@@ -2,6 +2,7 @@ package timeutil
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -10,6 +11,11 @@ const (
 	DateTimeFormat = "20060102T150405"
 	DateFormat     = "20060102"
 )
+
+func FormatDuration(d time.Duration) string {
+	re := regexp.MustCompile("^(?:[1-9][0-9]*[hms])*")
+	return re.FindString(d.String())
+}
 
 func (d Date) RRule(loc *time.Location) string {
 	if d.Year != nil && d.Month != nil && d.Monthday != nil {
