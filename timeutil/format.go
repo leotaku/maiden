@@ -93,6 +93,10 @@ func (d Date) Format(o DateOrder) string {
 }
 
 func (t Time) String() string {
+	if t.Hour == nil && t.Minute == nil {
+		return ""
+	}
+
 	hour := 0
 	minute := 0
 	if t.Hour != nil {
