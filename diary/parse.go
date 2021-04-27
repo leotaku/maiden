@@ -60,10 +60,10 @@ func (p *Parser) Next() (*Entry, error) {
 		return nil, fmt.Errorf("no date context")
 	} else if v.Date != nil {
 		date, err := timeutil.ParseDate(v.Date.Left, v.Date.Middle, v.Date.Right, p.order)
-		date.Weekday, _ = timeutil.ParseWeekday(v.Date.Weekday)
 		if err != nil {
 			return nil, fmt.Errorf("date: %w", err)
 		}
+		date.Weekday, _ = timeutil.ParseWeekday(v.Date.Weekday)
 		dt.Date = *date
 		p.lastDate = date
 	} else {
