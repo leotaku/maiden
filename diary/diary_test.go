@@ -22,7 +22,7 @@ func TestParseLine(t *testing.T) {
 	parser := diary.NewParser(r, diary.ISO)
 	events, err := parser.All()
 	for _, event := range events {
-		ve := event.ToICALEvent(time.Local)
+		ve := event.ToVEvent(time.Local)
 		fmt.Println(ve.Serialize())
 	}
 
