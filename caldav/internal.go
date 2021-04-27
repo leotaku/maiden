@@ -8,8 +8,10 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/leotaku/maiden/timeutil"
 )
 
 type (
@@ -20,6 +22,48 @@ type (
 type idval struct {
 	Href string
 	Etag string
+}
+
+func (c *Client) fetchDefaultTimezone() error {
+	v, err := c.multistatus("PROPFIND", c.calendarPath, getTimezoneXML, 0)
+	if err != nil {
+		return fmt.Errorf("multistatus: %v", err)
+	}
+
+	if len(v.Responses) == 1 {
+		vt, err := v.Responses[0].toTimezone()
+		if err != nil {
+			return fmt.Errorf("timezone: %w", err)
+		}
+		c.timezone = vt
+	}
+
+	return nil
+}
+
+func (c *Client) fetchEvents() error {
+	v, err := c.multistatus("REPORT", c.calendarPath, getEventsXML, 1)
+	if err != nil {
+		return fmt.Errorf("multistatus: %w", err)
+	}
+
+	result := make([]*ics.VEvent, 0)
+	ids := make(idmap)
+	for _, rsp := range v.Responses {
+		ve, err := rsp.toEvent()
+		if err != nil {
+			return fmt.Errorf("event: %w", err)
+		}
+		result = append(result, ve)
+		ids[ve.Id()] = idval{
+			Href: rsp.Href,
+			Etag: rsp.Props.GetEtag,
+		}
+	}
+
+	c.events = result
+	c.eventIds = ids
+	return nil
 }
 
 func (c *Client) multistatus(method, href, body string, depth int) (*multistatus, error) {
@@ -102,3 +146,26 @@ func getEtag(c *http.Client, rsp *http.Response) (string, error) {
 	}
 }
 
+func normalizeTimezone(prop *ics.IANAProperty, name string, loc *time.Location) {
+	ploc := time.UTC
+	if tzid := prop.ICalParameters["TZID"]; len(tzid) == 1 {
+		ploc, _ = time.LoadLocation(tzid[0])
+	}
+	if time, err := time.ParseInLocation(timeutil.DateTimeFormat, prop.Value, ploc); err == nil {
+		prop.Value = time.In(loc).Format(timeutil.DateTimeFormat)
+		prop.ICalParameters["TZID"] = []string{name}
+	}
+}
+
+func getVTimezoneInfo(vt *ics.VTimezone) (string, *time.Location) {
+	for _, prop := range vt.Properties {
+		if prop.IANAToken == string(ics.PropertyTzid) {
+			time, err := time.LoadLocation(prop.Value)
+			if err == nil {
+				return prop.Value, time
+			}
+		}
+	}
+
+	return "UTC", nil
+}
