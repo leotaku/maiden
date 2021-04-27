@@ -18,7 +18,12 @@ jobs:
       with:
         go-version: ^1.16
     - run: |
-        go run *.go --help         > wiki/Home.mediawiki
+        rm -rf wiki/*
+    - run: |
+        go run *.go help         > wiki/Home.mediawiki
+        go run *.go init  --help > wiki/Init.mediawiki
+        go run *.go sync  --help > wiki/Sync.mediawiki
+        go run *.go serve --help > wiki/Serve.mediawiki
     - run: |
         cd wiki
         git config --global user.name  "actions-user"
