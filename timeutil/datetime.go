@@ -21,6 +21,40 @@ type Time struct {
 	Minute *int
 }
 
+func FromAbsolute(t time.Time) Datetime {
+	year := t.Year()
+	month := t.Month()
+	monthday := t.Day()
+	hour := t.Hour()
+	minute := t.Minute()
+
+	return Datetime{
+		Date: Date{
+			Year:     &year,
+			Month:    &month,
+			Monthday: &monthday,
+		},
+		Time: Time{
+			Hour:   &hour,
+			Minute: &minute,
+		},
+	}
+}
+
+func FromDate(t time.Time) Datetime {
+	year := t.Year()
+	month := t.Month()
+	monthday := t.Day()
+
+	return Datetime{
+		Date: Date{
+			Year:     &year,
+			Month:    &month,
+			Monthday: &monthday,
+		},
+	}
+}
+
 func (d Datetime) First(loc *time.Location) time.Time {
 	year := time.Now().Year()
 	month := time.January
