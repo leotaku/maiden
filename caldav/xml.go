@@ -8,10 +8,9 @@ import (
 	ics "github.com/arran4/golang-ical"
 )
 
-const getCalendarXML = `
+const getCtagXML = `
 <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/">
   <d:prop>
-     <d:displayname />
      <cs:getctag />
   </d:prop>
 </d:propfind>`
@@ -46,12 +45,10 @@ type response struct {
 }
 
 type props struct {
-	Displayname      string `xml:"displayname"`
 	GetCtag          string `xml:"getctag"`
 	GetEtag          string `xml:"getetag"`
 	CalendarData     string `xml:"calendar-data"`
-	CalendarTimezone string `xml:"calendar-zimezone"`
-	SyncToken        string `xml:"sync-token"`
+	CalendarTimezone string `xml:"calendar-timezone"`
 }
 
 func (rsp response) toEvent() (*ics.VEvent, error) {
@@ -64,4 +61,20 @@ func (rsp response) toEvent() (*ics.VEvent, error) {
 	}
 
 	return cal.Events()[0], nil
+}
+
+func (rsp response) toTimezone() (*ics.VTimezone, error) {
+	r := strings.NewReader(rsp.Props.CalendarTimezone)
+	cal, err := ics.ParseCalendar(r)
+	if err != nil {
+		return nil, fmt.Errorf("parse: %w", err)
+	} else if len(cal.Components) != 1 {
+		return nil, fmt.Errorf("not a singleton")
+	}
+
+	if vt, ok := cal.Components[0].(*ics.VTimezone); ok {
+		return vt, nil
+	} else {
+		return nil, fmt.Errorf("not a timezone singleton")
+	}
 }
