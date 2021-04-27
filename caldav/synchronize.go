@@ -18,7 +18,7 @@ func (c *Client) GetCtag() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("multistatus: %w", err)
 	} else if len(v.Responses) != 1 {
-		return "", fmt.Errorf("not singleton response")
+		return "", fmt.Errorf("not exactly one response")
 	} else {
 		return v.Responses[0].Props.GetCtag, nil
 	}

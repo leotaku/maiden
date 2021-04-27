@@ -57,7 +57,7 @@ func (rsp response) toEvent() (*ics.VEvent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse: %w", err)
 	} else if len(cal.Events()) != 1 {
-		return nil, fmt.Errorf("not a singleton")
+		return nil, fmt.Errorf("not exactly one event")
 	}
 
 	return cal.Events()[0], nil
@@ -69,12 +69,12 @@ func (rsp response) toTimezone() (*ics.VTimezone, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse: %w", err)
 	} else if len(cal.Components) != 1 {
-		return nil, fmt.Errorf("not a singleton")
+		return nil, fmt.Errorf("not exactly one timezone")
 	}
 
 	if vt, ok := cal.Components[0].(*ics.VTimezone); ok {
 		return vt, nil
 	} else {
-		return nil, fmt.Errorf("not a timezone singleton")
+		return nil, fmt.Errorf("not a timezone")
 	}
 }
