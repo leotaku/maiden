@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/leotaku/maiden/caldav"
@@ -31,19 +30,6 @@ func loadGoogleClient(calID, dataHome string) (*caldav.Client, error) {
 	}
 
 	return client, nil
-}
-
-func loadLocalDiary(filename string, order timeutil.DateOrder) ([]diary.Entry, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("local: %w", err)
-	}
-	diary, err := diary.NewParser(f, order).All()
-	if err != nil {
-		return nil, fmt.Errorf("diary: %w", err)
-	}
-
-	return diary, nil
 }
 
 func validateDateStyle(style string) (timeutil.DateOrder, error) {

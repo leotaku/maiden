@@ -92,26 +92,6 @@ func watchNow(watcher *fsnotify.Watcher) <-chan fsnotify.Event {
 	return output
 }
 
-func debounceWatcher(watcher *fsnotify.Watcher) <-chan fsnotify.Event {
-	output := make(chan fsnotify.Event)
-	go func() {
-	start:
-		event := <-watcher.Events
-		for {
-			// Drain for one second
-			select {
-			case <-watcher.Events:
-			case <-watcher.Errors:
-			case <-time.After(time.Second):
-				output <- event
-				goto start
-			}
-		}
-	}()
-
-	return output
-}
-
 func initServeCmd() {
 	*serveCmd.Flags() = *syncCmd.Flags()
 }
