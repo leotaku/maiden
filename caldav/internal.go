@@ -55,25 +55,6 @@ func (c *Client) prepareRequest(method, href, body string) (*http.Request, error
 	return http.NewRequest(method, url.String(), r)
 }
 
-func getEtag(c *http.Client, rsp *http.Response) (string, error) {
-	if etag := rsp.Header.Get("ETag"); etag != "" {
-		return etag, nil
-	}
-
-	req, err := http.NewRequest("HEAD", rsp.Request.URL.String(), nil)
-	if err != nil {
-		return "", fmt.Errorf("prepare: %w", err)
-	}
-
-	if rsp, err := c.Do(req); err != nil {
-		return "", err
-	} else if etag := rsp.Header.Get("ETag"); etag == "" {
-		return "", fmt.Errorf("empty")
-	} else {
-		return etag, nil
-	}
-}
-
 func (c *Client) eventHref(ve *ics.VEvent) string {
 	if v, ok := c.eventIds[ve.Id()]; ok {
 		return v.Href
@@ -101,3 +82,23 @@ func (c *Client) genId() string {
 		return id
 	}
 }
+
+func getEtag(c *http.Client, rsp *http.Response) (string, error) {
+	if etag := rsp.Header.Get("ETag"); etag != "" {
+		return etag, nil
+	}
+
+	req, err := http.NewRequest("HEAD", rsp.Request.URL.String(), nil)
+	if err != nil {
+		return "", fmt.Errorf("prepare: %w", err)
+	}
+
+	if rsp, err := c.Do(req); err != nil {
+		return "", err
+	} else if etag := rsp.Header.Get("ETag"); etag == "" {
+		return "", fmt.Errorf("empty")
+	} else {
+		return etag, nil
+	}
+}
+
