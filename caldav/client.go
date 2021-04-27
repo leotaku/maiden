@@ -26,7 +26,7 @@ func (c *Client) Timezone() (string, *time.Location) {
 	return getVTimezoneInfo(c.timezone)
 }
 
-func (c *Client) Refetch() error {
+func (c *Client) Update() error {
 	err := c.fetchDefaultTimezone()
 	if err != nil {
 		return err

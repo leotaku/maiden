@@ -25,7 +25,7 @@ func (b *builder) BuildAndInit() (*Client, error) {
 		builder:  *b,
 	}
 
-	if err := c.Refetch(); err != nil {
+	if err := c.Update(); err != nil {
 		return nil, err
 	} else {
 		return c, nil
