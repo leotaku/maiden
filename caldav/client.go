@@ -2,6 +2,7 @@ package caldav
 
 import (
 	"fmt"
+	"time"
 
 	ics "github.com/arran4/golang-ical"
 )
@@ -9,6 +10,7 @@ import (
 type Client struct {
 	eventIds idmap
 	events   []*ics.VEvent
+	timezone *ics.VTimezone
 	builder
 }
 
@@ -20,29 +22,17 @@ func (c *Client) Events() []*ics.VEvent {
 	return c.events
 }
 
+func (c *Client) Timezone() (string, *time.Location) {
+	return getVTimezoneInfo(c.timezone)
+}
+
 func (c *Client) Refetch() error {
-	v, err := c.multistatus("REPORT", c.calendarPath, getEventsXML, 1)
+	err := c.fetchDefaultTimezone()
 	if err != nil {
-		return fmt.Errorf("multistatus: %w", err)
+		return err
 	}
 
-	result := make([]*ics.VEvent, 0)
-	ids := make(idmap)
-	for _, rsp := range v.Responses {
-		ve, err := rsp.toEvent()
-		if err != nil {
-			return fmt.Errorf("event: %w", err)
-		}
-		result = append(result, ve)
-		ids[ve.Id()] = idval{
-			Href: rsp.Href,
-			Etag: rsp.Props.GetEtag,
-		}
-	}
-
-	c.events = result
-	c.eventIds = ids
-	return nil
+	return c.fetchEvents()
 }
 
 func (c *Client) Put(ve *ics.VEvent) error {
@@ -108,10 +98,14 @@ func (c *Client) FinalizeEvent(ve *ics.VEvent) *ics.Calendar {
 
 	cal := ics.NewCalendar()
 	*cal.AddEvent(ve.Id()) = *ve
-	start := ve.GetProperty(ics.ComponentPropertyDtStart)
-	if start != nil {
-		if id := start.ICalParameters["TZID"]; len(id) == 1 {
-			cal.SetXWRTimezone(id[0])
+	if c.timezone != nil {
+		cal.Components = append(cal.Components, c.timezone)
+		name, loc := getVTimezoneInfo(c.timezone)
+		if start := ve.GetProperty(ics.ComponentPropertyDtStart); start != nil {
+			normalizeTimezone(start, name, loc)
+		}
+		if end := ve.GetProperty(ics.ComponentPropertyDtEnd); end != nil {
+			normalizeTimezone(end, name, loc)
 		}
 	}
 
