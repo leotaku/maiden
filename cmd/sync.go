@@ -1,15 +1,12 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/leotaku/maiden/caldav"
 	"github.com/leotaku/maiden/diary"
-	"github.com/leotaku/maiden/oauth"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -19,59 +16,84 @@ var (
 	dateStyleArg string
 )
 
-var serveCmd = &cobra.Command{
-	Use:     "serve [flags..]",
-	Short:   "Start task synchronization daemon",
+var syncCmd = &cobra.Command{
+	Use:     "sync [flags..]",
+	Short:   "Sync tasks exactly once",
 	Version: rootCmd.Version,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
-		life := oauth.NewLifecycle(dataHome)
-		config, tok, err := life.Load()
+		order, err := validateDateStyle(dateStyleArg)
 		if err != nil {
-			return fmt.Errorf("auth: %w", err)
+			return fmt.Errorf("args: %w", err)
 		}
 
-		href := fmt.Sprintf("/caldav/v2/%v/events", calendarArg)
-		http := config.Client(context.TODO(), tok)
-		b := caldav.NewBuilder()
-		b.WithHttp(http)
-		b.WithHostURL(googleURL)
-		b.WithCalendarPath(href)
-		client, err := b.BuildAndInit()
-		if err != nil {
-			return fmt.Errorf("init: %w", err)
-		}
-
-		for _, event := range client.Events() {
-			if strings.Contains(event.Id(), client.ProviderName()) {
-				fmt.Println(client.Del(event))
-			}
-		}
-
-		f, err := os.Open(fileArg)
-		if err != nil {
-			return fmt.Errorf("local: %w", err)
-		}
-		entries, err := diary.NewParser(f, diary.ISO).All()
+		diary, err := diary.NewDiary(fileArg, order)
 		if err != nil {
 			return fmt.Errorf("diary: %w", err)
 		}
 
-		for _, entry := range entries {
-			fmt.Printf("%-20v %-35v %v\n", entry.Description, entry.Timestamp.First(time.Local), entry.Duration)
-			fmt.Println(client.Put(entry.ToICALEvent(time.Local)))
+		client, err := loadGoogleClient(calendarArg, dataHome)
+		if err != nil {
+			return fmt.Errorf("caldav: %w", err)
 		}
+
+		// All errors are only logged past this point
+		syncOnce(client, diary)
 
 		return nil
 	},
 	DisableFlagsInUseLine: true,
 }
 
+func syncOnce(c *caldav.Client, d *diary.Diary) {
+	for _, event := range c.Events() {
+		if !strings.Contains(event.Id(), c.ProviderName()) {
+			if entry, err := diary.FromVEvent(event); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"id":    event.Id(),
+					"error": err,
+				}).Warn("Importing event failed")
+				continue
+			} else if err := d.Add(*entry); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"id":    event.Id(),
+					"error": err,
+				}).Warn("Writing event to diary failed")
+				continue
+			}
+		}
+		if err := c.Del(event); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"id":    event.Id(),
+				"error": err,
+			}).Error("Deletion of event failed")
+		}
+	}
+
+	_, loc := c.Timezone()
+	for _, entry := range d.Entries() {
+		ctx := logrus.WithFields(logrus.Fields{
+			"description": entry.Description,
+			"timestamp":   entry.Datetime.First(loc),
+			"duration":    entry.Duration,
+		})
+		err := c.Put(entry.ToVEvent(loc))
+		if err != nil {
+			ctx.WithField("error", err).Error("Upload of event failed")
+		} else {
+			ctx.Debug("Upload of event succeeded")
+		}
+	}
+
+}
+
 func init() {
-	serveCmd.Flags().StringVarP(&calendarArg, "calendar", "c", "", "Calendar ID to connect to")
-	serveCmd.Flags().StringVarP(&fileArg, "file", "f", "", "Local diary file to use")
-	serveCmd.Flags().StringVarP(&dateStyleArg, "date-style", "d", "", "Date style used in diary")
-	serveCmd.MarkFlagRequired("calendar")
-	serveCmd.MarkFlagRequired("file")
-	serveCmd.MarkFlagRequired("date-style")
+	syncCmd.Flags().StringVarP(&calendarArg, "calendar", "c", "", "Calendar ID to connect to")
+	syncCmd.Flags().StringVarP(&fileArg, "file", "f", "", "Local diary file to use")
+	syncCmd.Flags().StringVarP(&dateStyleArg, "date-style", "d", "", "Date style used in diary")
+	syncCmd.MarkFlagRequired("calendar")   //nolint:errcheck
+	syncCmd.MarkFlagRequired("file")       //nolint:errcheck
+	syncCmd.MarkFlagRequired("date-style") //nolint:errcheck
+	syncCmd.Flags().SortFlags = false
+	initServeCmd()
 }
