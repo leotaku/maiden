@@ -65,8 +65,7 @@ func ParseTime(hour, minute string) (*Time, error) {
 
 func ParseMonth(month string) (*time.Month, error) {
 	if m, err := parseRange(month, 1, 12); err == nil {
-		result := time.Month(*m)
-		return &result, nil
+		return (*time.Month)(m), nil
 	} else {
 		for i := time.January; i <= time.December; i++ {
 			if strings.HasPrefix(month, i.String()[0:3]) {
